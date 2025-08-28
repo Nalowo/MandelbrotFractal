@@ -53,22 +53,22 @@ public:
     }
 
     void Run() {
-        FrameClock frame_clock;
-        sf::Clock zoom_clock;
+        // FrameClock frame_clock;
+        // sf::Clock zoom_clock;
 
-        auto pipeline = SfmlEventHandler{window_, render_settings_, state_, zoom_clock} |  //
-                        stdexec::let_value([this]() {                                      //
-                            return CalculateMandelbrotAsyncSender{state_, render_settings_, renderer_};
-                        }) |
-                        stdexec::let_value([this](RenderResult data) {
-                            return SFMLRender{std::move(data), image_, texture_, sprite_, window_, render_settings_};
-                        }) |  //
-                        stdexec::then(WaitForFPS{frame_clock, 60});
+        // auto pipeline = SfmlEventHandler{window_, render_settings_, state_, zoom_clock} |  //
+        //                 stdexec::let_value([this]() {                                      //
+        //                     return CalculateMandelbrotAsyncSender{state_, render_settings_, renderer_};
+        //                 }) |
+        //                 stdexec::let_value([this](RenderResult data) {
+        //                     return SFMLRender{std::move(data), image_, texture_, sprite_, window_, render_settings_};
+        //                 }) |  //
+        //                 stdexec::then(WaitForFPS{frame_clock, 60});
 
-        auto repeated_pipeline =
-            std::move(pipeline) | stdexec::then([this]() { return state_.should_exit; }) | exec::repeat_effect_until();
+        // auto repeated_pipeline =
+        //     std::move(pipeline) | stdexec::then([this]() { return state_.should_exit; }) | exec::repeat_effect_until();
 
-        stdexec::sync_wait(std::move(repeated_pipeline));
+        // stdexec::sync_wait(std::move(repeated_pipeline));
     }
 };
 
