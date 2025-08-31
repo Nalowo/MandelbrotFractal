@@ -27,7 +27,20 @@ private:
 
 class WaitForFPS {
 public:
+    WaitForFPS(FrameClock &clock, int fps) : clock_(clock), target_fps_(fps) {}
 
+    void operator()() {
+        auto elapsed = clock_.GetFrameTime();
+        auto target_duration = std::chrono::milliseconds(1000 / target_fps_);
+        if (elapsed < target_duration) {
+            std::this_thread::sleep_for(target_duration - elapsed);
+        }
+        clock_.Reset();
+    }
+
+private:
+    FrameClock &clock_;
+    int target_fps_;
 };
 
 class MandelbrotApp {
@@ -53,22 +66,22 @@ public:
     }
 
     void Run() {
-        // FrameClock frame_clock;
-        // sf::Clock zoom_clock;
+        FrameClock frame_clock;
+        sf::Clock zoom_clock;
 
-        // auto pipeline = SfmlEventHandler{window_, render_settings_, state_, zoom_clock} |  //
-        //                 stdexec::let_value([this]() {                                      //
-        //                     return CalculateMandelbrotAsyncSender{state_, render_settings_, renderer_};
-        //                 }) |
-        //                 stdexec::let_value([this](RenderResult data) {
-        //                     return SFMLRender{std::move(data), image_, texture_, sprite_, window_, render_settings_};
-        //                 }) |  //
-        //                 stdexec::then(WaitForFPS{frame_clock, 60});
+        auto pipeline = SfmlEventHandler{window_, render_settings_, state_, zoom_clock} |  //
+                        stdexec::let_value([this]() {                                      //
+                            return CalculateMandelbrotAsyncSender{state_, render_settings_, renderer_};
+                        }) |
+                        stdexec::let_value([this](RenderResult data) {
+                            return SFMLRender{std::move(data), image_, texture_, sprite_, window_, render_settings_};
+                        }) |  //
+                        stdexec::then(WaitForFPS{frame_clock, 60});
 
-        // auto repeated_pipeline =
-        //     std::move(pipeline) | stdexec::then([this]() { return state_.should_exit; }) | exec::repeat_effect_until();
+        auto repeated_pipeline =
+            std::move(pipeline) | stdexec::then([this]() { return state_.should_exit; }) | exec::repeat_effect_until();
 
-        // stdexec::sync_wait(std::move(repeated_pipeline));
+        stdexec::sync_wait(std::move(repeated_pipeline));
     }
 };
 
