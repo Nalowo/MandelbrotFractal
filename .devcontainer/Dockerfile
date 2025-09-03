@@ -36,19 +36,15 @@ RUN set -e; \
         groupdel ubuntu 2>/dev/null || true; \
     fi;
 
-# Create a non-root user 'dev' with host UID/GID
+# Create a non-root user 'dev' with host UID/GID if it does not exist.
+# Use safe defaults if build args are empty.
 RUN set -e; \
-    echo "Create group $USERNAME with GID=$USER_GID"; \
-    groupadd --gid $USER_GID $USERNAME; \
-    \
-    echo "Create user $USERNAME with UID=$USER_UID and GID=$USER_GID"; \
-    useradd -ms /bin/bash --uid $USER_UID --gid $USER_GID $USERNAME; \
-    \
-    # Configure NOPASSWD option
-    echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USERNAME; \
-    chmod 0440 /etc/sudoers.d/$USERNAME; \
-    \
-    echo "User $USERNAME with UID=$USER_UID and GID=$USER_GID was successfully created"
+    USER_UID="${USER_UID:-1000}"; USER_GID="${USER_GID:-1000}"; \
+    if ! id -u "$USERNAME" >/dev/null 2>&1; then \
+      groupadd --gid "$USER_GID" "$USERNAME" 2>/dev/null || true; \
+      useradd -m -s /bin/bash --uid "$USER_UID" --gid "$USER_GID" "$USERNAME" 2>/dev/null || useradd -m -s /bin/bash "$USERNAME"; \
+      echo "$USERNAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USERNAME; chmod 0440 /etc/sudoers.d/$USERNAME; \
+    fi
 
 # Switch to non-root user
 USER $USERNAME
